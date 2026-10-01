@@ -297,6 +297,7 @@ const SYSTEM_PATHS = [
   'mark-pdf-ready.mjs',
   'normalize-statuses.mjs',
   'cv-sync-check.mjs',
+  'i18n-drift.mjs',
   'verify-cv-facts.mjs',
   'verify-ats.mjs',
   'update-system.mjs',
