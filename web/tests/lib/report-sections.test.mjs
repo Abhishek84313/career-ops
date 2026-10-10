@@ -205,3 +205,29 @@ test("splitSections on a marked report keeps the marker out of the content", () 
   assert.ok(!h.content.includes("career-ops:"), "no marker reaches the rendered section content");
   assert.ok(h.content.includes("**Q:** a"), "the drafts themselves survive");
 });
+
+test("stripCoreMarkers never reaches across a line to a later comment's close", () => {
+  // Matched on ONE line because the core emits it on one line and reads it back
+  // anchored to one (DRAFT_ANSWERS_COMMENT_RE in application-answers.mjs). A
+  // cross-line body was strictly more permissive than anything the core writes,
+  // and it failed in the direction that costs the reader their content: this
+  // UNCLOSED marker ran forward to the `-->` of the user's OWN comment four
+  // lines down, deleting the drafts in between — what the block exists to show.
+  const md = [
+    "## H) Draft Application Answers",
+    "<!-- career-ops:draft-answers", // deliberately unclosed
+    "",
+    "**Q:** why us?",
+    "",
+    "<!-- my own note to self -->",
+    "",
+    "tail",
+  ].join("\n");
+  const out = stripCoreMarkers(md);
+  assert.ok(out.includes("**Q:** why us?"), "the drafts must survive a malformed marker");
+  assert.ok(out.includes("my own note to self"), "the reader's own comment must survive");
+  assert.ok(out.includes("tail"), "content after the user's comment must survive");
+  // Malformed input leaves a VISIBLE marker rather than a silent hole, so the
+  // mistake is obvious to whoever wrote it instead of eating the section.
+  assert.ok(out.includes("<!-- career-ops:draft-answers"), "an unclosed marker is left in place, not guessed at");
+});

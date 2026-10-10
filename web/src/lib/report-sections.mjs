@@ -60,11 +60,21 @@ const HEADING_LETTER = /^(?:Block\s+([A-Z])(?:[).:]|\s)|([A-Z])[).:])/i;
  * Scoped to the `career-ops:` namespace on purpose: a comment someone wrote in
  * their own report is their content, and this is not a general HTML stripper.
  *
+ * Matched on ONE line, never across them. The core writes the marker as a
+ * literal single line in all 19 modes, and its own reader is anchored the same
+ * way (`DRAFT_ANSWERS_COMMENT_RE` in `application-answers.mjs`), so matching one
+ * line is the contract rather than a narrowing of it. A `[\s\S]*?` body is
+ * strictly more permissive than anything the core emits, and it fails in the
+ * direction that costs the reader their content: an UNCLOSED `<!-- career-ops:`
+ * line runs forward to the `-->` of a later, unrelated comment the user wrote
+ * themselves and deletes every line in between — the drafts this block exists
+ * to show. Malformed input should leave a visible marker, not a silent hole.
+ *
  * @param {string} md
  * @returns {string}
  */
 export function stripCoreMarkers(md) {
-  return String(md ?? "").replace(/^[ \t]*<!--\s*career-ops:[\s\S]*?-->[ \t]*\r?\n?/gm, "");
+  return String(md ?? "").replace(/^[ \t]*<!--[ \t]*career-ops:[^\n]*?-->[ \t]*\r?\n?/gm, "");
 }
 
 /**
